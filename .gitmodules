@@ -1,0 +1,12 @@
+[submodule "practicing_continuous_delivery"]
+	path = practicing_continuous_delivery
+	url = https://github.com/jamesward/practicing_continuous_delivery.git
+[submodule "introduction_to_the_play_framework"]
+	path = introduction_to_the_play_framework
+	url = https://github.com/jamesward/introduction_to_the_play_framework.git
+[submodule "running_java_play_and_scala_apps_on_the_cloud"]
+	path = running_java_play_and_scala_apps_on_the_cloud
+	url = https://github.com/jamesward/running_java_play_and_scala_apps_on_the_cloud.git
+[submodule "client_server_apps_with_html5_and_java"]
+	path = client_server_apps_with_html5_and_java
+	url = https://github.com/jamesward/client_server_apps_with_html5_and_java.git
