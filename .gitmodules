@@ -10,3 +10,6 @@
 [submodule "client_server_apps_with_html5_and_java"]
 	path = client_server_apps_with_html5_and_java
 	url = https://github.com/jamesward/client_server_apps_with_html5_and_java.git
+[submodule "modern_web_apps_with_scala_and_play"]
+	path = modern_web_apps_with_scala_and_play
+	url = https://github.com/jamesward/modern_web_apps_with_scala_and_play.git
