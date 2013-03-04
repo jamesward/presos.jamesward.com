@@ -13,3 +13,6 @@
 [submodule "modern_web_apps_with_scala_and_play"]
 	path = modern_web_apps_with_scala_and_play
 	url = https://github.com/jamesward/modern_web_apps_with_scala_and_play.git
+[submodule "architecting-event-driven-web-mobile-and-restful-apps"]
+	path = architecting-event-driven-web-mobile-and-restful-apps
+	url = https://github.com/jamesward/architecting-event-driven-web-mobile-and-restful-apps.git
