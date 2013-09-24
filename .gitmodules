@@ -16,3 +16,6 @@
 [submodule "architecting-event-driven-web-mobile-and-restful-apps"]
 	path = architecting-event-driven-web-mobile-and-restful-apps
 	url = https://github.com/jamesward/architecting-event-driven-web-mobile-and-restful-apps.git
+[submodule "web-fundamentals"]
+	path = web-fundamentals
+	url = https://github.com/jamesward/web-fundamentals.git
