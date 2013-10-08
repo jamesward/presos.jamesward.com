@@ -19,3 +19,6 @@
 [submodule "web-fundamentals"]
 	path = web-fundamentals
 	url = https://github.com/jamesward/web-fundamentals.git
+[submodule "play-deep-end"]
+	path = play-deep-end
+	url = https://github.com/jamesward/play-deep-end.git
