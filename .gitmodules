@@ -22,3 +22,9 @@
 [submodule "play-deep-end"]
 	path = play-deep-end
 	url = https://github.com/jamesward/play-deep-end.git
+[submodule "introduction_to_the_play_framework-java"]
+	path = introduction_to_the_play_framework-java
+	url = https://github.com/jamesward/introduction_to_the_play_framework-java.git
+[submodule "introduction_to_the_play_framework-scala"]
+	path = introduction_to_the_play_framework-scala
+	url = https://github.com/jamesward/introduction_to_the_play_framework-scala.git
