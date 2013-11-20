@@ -28,3 +28,6 @@
 [submodule "introduction_to_the_play_framework-scala"]
 	path = introduction_to_the_play_framework-scala
 	url = https://github.com/jamesward/introduction_to_the_play_framework-scala.git
+[submodule "building-reactive-apps"]
+	path = building-reactive-apps
+	url = https://github.com/jamesward/building-reactive-apps.git
