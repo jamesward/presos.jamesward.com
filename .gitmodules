@@ -31,3 +31,6 @@
 [submodule "building-reactive-apps"]
 	path = building-reactive-apps
 	url = https://github.com/jamesward/building-reactive-apps.git
+[submodule "optimizing-play-for-production"]
+	path = optimizing-play-for-production
+	url = https://github.com/jamesward/optimizing-play-for-production.git
