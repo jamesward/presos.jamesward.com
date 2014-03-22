@@ -34,3 +34,6 @@
 [submodule "optimizing-play-for-production"]
 	path = optimizing-play-for-production
 	url = https://github.com/jamesward/optimizing-play-for-production.git
+[submodule "intro-to-scala"]
+	path = intro-to-scala
+	url = https://github.com/jamesward/intro-to-scala.git
