@@ -37,3 +37,6 @@
 [submodule "intro-to-scala"]
 	path = intro-to-scala
 	url = https://github.com/jamesward/intro-to-scala.git
+[submodule "intro-to-sbt-web"]
+	path = intro-to-sbt-web
+	url = https://github.com/jamesward/intro-to-sbt-web.git
