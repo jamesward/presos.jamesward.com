@@ -40,3 +40,6 @@
 [submodule "intro-to-sbt-web"]
 	path = intro-to-sbt-web
 	url = https://github.com/jamesward/intro-to-sbt-web.git
+[submodule "reactive-all-the-way-down"]
+	path = reactive-all-the-way-down
+	url = https://github.com/jamesward/reactive-all-the-way-down.git
