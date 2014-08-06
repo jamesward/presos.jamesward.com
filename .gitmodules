@@ -43,3 +43,6 @@
 [submodule "reactive-all-the-way-down"]
 	path = reactive-all-the-way-down
 	url = https://github.com/jamesward/reactive-all-the-way-down.git
+[submodule "building-deploying-reactive-service-pipelines"]
+	path = building-deploying-reactive-service-pipelines
+	url = https://github.com/jamesward/building-deploying-reactive-service-pipelines.git
