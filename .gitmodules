@@ -46,3 +46,6 @@
 [submodule "building-deploying-reactive-service-pipelines"]
 	path = building-deploying-reactive-service-pipelines
 	url = https://github.com/jamesward/building-deploying-reactive-service-pipelines.git
+[submodule "comparing-elasticity-reactive-frameworks"]
+	path = comparing-elasticity-reactive-frameworks
+	url = https://github.com/jamesward/comparing-elasticity-reactive-frameworks.git
