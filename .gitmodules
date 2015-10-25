@@ -52,3 +52,6 @@
 [submodule "continuous_delivery_of_micro-services"]
 	path = continuous_delivery_of_micro-services
 	url = https://github.com/jamesward/continuous_delivery_of_micro-services.git
+[submodule "intro-to-scala-for-java-devs"]
+	path = intro-to-scala-for-java-devs
+	url = https://github.com/jamesward/intro-to-scala-for-java-devs.git
