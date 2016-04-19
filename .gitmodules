@@ -55,3 +55,6 @@
 [submodule "intro-to-scala-for-java-devs"]
 	path = intro-to-scala-for-java-devs
 	url = https://github.com/jamesward/intro-to-scala-for-java-devs.git
+[submodule "intro-to-heroku"]
+	path = intro-to-heroku
+	url = https://github.com/jamesward/intro-to-heroku.git
