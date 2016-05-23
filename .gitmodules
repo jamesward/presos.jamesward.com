@@ -58,3 +58,6 @@
 [submodule "intro-to-heroku"]
 	path = intro-to-heroku
 	url = https://github.com/jamesward/intro-to-heroku.git
+[submodule "webjars-bintray"]
+	path = webjars-bintray
+	url = https://github.com/jamesward/webjars-bintray.git
