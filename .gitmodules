@@ -64,3 +64,6 @@
 [submodule "managing_open_source_contributions_in_large_orgs"]
 	path = managing_open_source_contributions_in_large_orgs
 	url = https://github.com/jamesward/managing_open_source_contributions_in_large_orgs.git
+[submodule "refactoring_monoliths_to_microservices_with_functional_programming"]
+	path = refactoring_monoliths_to_microservices_with_functional_programming
+	url = https://github.com/jamesward/refactoring_monoliths_to_microservices_with_functional_programming.git
