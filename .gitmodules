@@ -67,3 +67,6 @@
 [submodule "refactoring_monoliths_to_microservices_with_functional_programming"]
 	path = refactoring_monoliths_to_microservices_with_functional_programming
 	url = https://github.com/jamesward/refactoring_monoliths_to_microservices_with_functional_programming.git
+[submodule "distributed_commit_logs_with_apache_kafka"]
+	path = distributed_commit_logs_with_apache_kafka
+	url = https://github.com/jamesward/distributed_commit_logs_with_apache_kafka.git
