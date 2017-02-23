@@ -73,3 +73,6 @@
 [submodule "building_modern_data_pipelines"]
 	path = building_modern_data_pipelines
 	url = https://github.com/jamesward/building_modern_data_pipelines.git
+[submodule "introduction_to_apache_kafka"]
+	path = introduction_to_apache_kafka
+	url = https://github.com/jamesward/introduction_to_apache_kafka.git
