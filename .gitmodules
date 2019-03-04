@@ -76,3 +76,6 @@
 [submodule "introduction_to_apache_kafka"]
 	path = introduction_to_apache_kafka
 	url = https://github.com/jamesward/introduction_to_apache_kafka.git
+[submodule "intro_to_fp"]
+	path = intro_to_fp
+	url = https://github.com/jamesward/intro_to_fp.git
