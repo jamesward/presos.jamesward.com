@@ -79,3 +79,6 @@
 [submodule "intro_to_fp"]
 	path = intro_to_fp
 	url = https://github.com/jamesward/intro_to_fp.git
+[submodule "fp-for-data-eng"]
+	path = fp-for-data-eng
+	url = https://github.com/jamesward/fp-for-data-eng.git
