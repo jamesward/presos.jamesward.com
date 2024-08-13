@@ -1,0 +1,150 @@
+amends "package://pkg.pkl-lang.org/github.com/aws-cloudformation/cloudformation-pkl/cloudformation@0.1.3#/template.pkl"
+import "package://pkg.pkl-lang.org/github.com/aws-cloudformation/cloudformation-pkl/cloudformation@0.1.3#/cloudformation.pkl" as cfn
+import "package://pkg.pkl-lang.org/github.com/aws-cloudformation/cloudformation-pkl/cloudformation@0.1.3#/aws/route53/recordset.pkl" as recordset
+import "package://pkg.pkl-lang.org/github.com/aws-cloudformation/cloudformation-pkl/cloudformation@0.1.3#/aws/route53/hostedzone.pkl" as hostedzone
+import "package://pkg.pkl-lang.org/github.com/aws-cloudformation/cloudformation-pkl/cloudformation@0.1.3#/aws/s3/bucket.pkl" as bucket
+import "package://pkg.pkl-lang.org/github.com/aws-cloudformation/cloudformation-pkl/cloudformation@0.1.3#/aws/s3/bucketpolicy.pkl" as bucketpolicy
+import "package://pkg.pkl-lang.org/github.com/aws-cloudformation/cloudformation-pkl/cloudformation@0.1.3#/aws/cloudfront/distribution.pkl" as distribution
+import "package://pkg.pkl-lang.org/github.com/aws-cloudformation/cloudformation-pkl/cloudformation@0.1.3#/aws/cloudfront/originaccesscontrol.pkl" as originaccesscontrol
+import "package://pkg.pkl-lang.org/github.com/aws-cloudformation/cloudformation-pkl/cloudformation@0.1.3#/aws/certificatemanager/certificate.pkl" as certificate
+
+// Rules {
+//   ["only-us-east-1"] {
+//     Assertions {
+//       new {
+//         Assert = cfn.Equals(cfn.Ref("AWS::Region"), "us-east-1")
+//         AssertDescription = """
+//           This template can only be deployed in the us-east-1 region.
+//
+//           This is because the ACM Certificate must be created in us-east-1
+//           """
+//       }
+//     }
+//   }
+// }
+
+Parameters {
+  ["HostedZoneId"] {
+    Description = "HostedZoneId for the domain"
+    Type = "String"
+  }
+}
+
+local domainname = "presos.jamesward.me"
+
+// todo: creating the hostedzone, assigns dns servers which must be set on the domain name
+//   https://stackoverflow.com/questions/76645024/cdk-deploy-is-stuck-on-awscertificatemanagercertificate-because-of-nameserve
+
+Resources {
+  // todo: registered domain because the dns servers have to be correct?
+//
+//   ["domain"] = new {
+//     Type = "AWS::Route53::RegisteredDomain"
+//     Properties = new Mapping {
+//       ["DomainName"] = "jamesward.me"
+//
+//     }
+//   }
+//
+//   ["hostedzone"] = new hostedzone.HostedZone {
+//     Name = "jamesward.me"
+//   }
+
+  ["RecordSet"] = new recordset.RecordSet {
+    HostedZoneId = cfn.Ref("HostedZoneId")
+    Name = domainname
+    TypeProperty = "A"
+    AliasTarget {
+      // The  following HosteZoneId is always used for alias records pointing to CF.
+      HostedZoneId = "Z2FDTNDATAQYW2"
+      //HostedZoneId = cfn.GetAtt("Distribution", "HostedZoneId")
+      DNSName = cfn.GetAtt("Distribution", "DomainName")
+      EvaluateTargetHealth = false
+    }
+  }
+
+  ["Certificate"] = new certificate.Certificate {
+    DomainName = domainname
+    ValidationMethod = "DNS"
+    // Adds the validation record to the hostedzone?
+    DomainValidationOptions {
+      new {
+        DomainName = domainname
+        HostedZoneId = cfn.Ref("HostedZoneId")
+      }
+    }
+  }
+
+  ["Bucket"] = new bucket.Bucket {
+    BucketName = domainname
+    AccessControl = "Private"
+  }
+
+  ["BucketPolicy"] = new bucketpolicy.BucketPolicy {
+    Bucket = cfn.Ref("Bucket")
+    PolicyDocument {
+      Version = "2012-10-17"
+      Statement {
+        new {
+          Action = "s3:GetObject"
+          Principal {
+            Service = "cloudfront.amazonaws.com"
+          }
+          Resource = cfn.Sub("arn:aws:s3:::${Bucket}/*")
+          Effect = "Allow"
+          Condition {
+            StringEquals {
+              `AWS:SourceArn` = cfn.Sub("arn:aws:cloudfront::${AWS::AccountId}:distribution/${Distribution.Id}")
+            }
+          }
+        }
+      }
+    }
+  }
+
+  ["OriginAccessControl"] = new originaccesscontrol.OriginAccessControl {
+    OriginAccessControlConfig {
+      Name = "OriginAccessControl"
+      OriginAccessControlOriginType = "s3"
+      SigningBehavior = "always"
+      SigningProtocol = "sigv4"
+    }
+  }
+
+  ["Distribution"] = new distribution.Distribution {
+    DistributionConfig {
+      Enabled = true
+      DefaultCacheBehavior {
+        AllowedMethods {
+          "GET"
+          "HEAD"
+        }
+        Compress = true
+        DefaultTTL = 86400
+        ForwardedValues {
+          QueryString = true
+        }
+        MaxTTL = 31536000
+        ViewerProtocolPolicy = "redirect-to-https"
+        TargetOriginId = "WebOrigin"
+      }
+      HttpVersion = "http2"
+      Aliases {
+        domainname
+      }
+      ViewerCertificate {
+        AcmCertificateArn = cfn.Ref("Certificate")
+        SslSupportMethod = "sni-only"
+      }
+      Origins {
+        new {
+          Id = "WebOrigin"
+          DomainName = cfn.GetAtt("Bucket", "RegionalDomainName")
+          // it seems this must be specified but empty?
+          S3OriginConfig { }
+          OriginAccessControlId = cfn.GetAtt("OriginAccessControl", "Id")
+        }
+      }
+    }
+  }
+}
