@@ -6,7 +6,12 @@ import "package://pkg.pkl-lang.org/github.com/aws-cloudformation/cloudformation-
 import "package://pkg.pkl-lang.org/github.com/aws-cloudformation/cloudformation-pkl/cloudformation@0.1.3#/aws/s3/bucketpolicy.pkl" as bucketpolicy
 import "package://pkg.pkl-lang.org/github.com/aws-cloudformation/cloudformation-pkl/cloudformation@0.1.3#/aws/cloudfront/distribution.pkl" as distribution
 import "package://pkg.pkl-lang.org/github.com/aws-cloudformation/cloudformation-pkl/cloudformation@0.1.3#/aws/cloudfront/originaccesscontrol.pkl" as originaccesscontrol
+import "package://pkg.pkl-lang.org/github.com/aws-cloudformation/cloudformation-pkl/cloudformation@0.1.3#/aws/cloudfront/function.pkl" as cloudfrontFunction
 import "package://pkg.pkl-lang.org/github.com/aws-cloudformation/cloudformation-pkl/cloudformation@0.1.3#/aws/certificatemanager/certificate.pkl" as certificate
+import "package://pkg.pkl-lang.org/github.com/aws-cloudformation/cloudformation-pkl/cloudformation@0.1.3#/aws/iam/role.pkl" as role
+import "package://pkg.pkl-lang.org/github.com/aws-cloudformation/cloudformation-pkl/cloudformation@0.1.3#/aws/codepipeline/pipeline.pkl" as codepipelinePipeline
+import "package://pkg.pkl-lang.org/github.com/aws-cloudformation/cloudformation-pkl/cloudformation@0.1.3#/aws/codestarconnections/connection.pkl" as codestarconnectionsConnection
+import "package://pkg.pkl-lang.org/github.com/aws-cloudformation/cloudformation-pkl/cloudformation@0.1.3#/aws/codebuild/project.pkl" as codebuildProject
 
 // Rules {
 //   ["only-us-east-1"] {
@@ -22,13 +27,6 @@ import "package://pkg.pkl-lang.org/github.com/aws-cloudformation/cloudformation-
 //     }
 //   }
 // }
-
-Parameters {
-  ["HostedZoneId"] {
-    Description = "HostedZoneId for the domain"
-    Type = "String"
-  }
-}
 
 local domainname = "presos.jamesward.me"
 
@@ -46,16 +44,30 @@ Resources {
 //     }
 //   }
 //
-//   ["hostedzone"] = new hostedzone.HostedZone {
-//     Name = "jamesward.me"
-//   }
 
-  ["RecordSet"] = new recordset.RecordSet {
-    HostedZoneId = cfn.Ref("HostedZoneId")
+  ["HostedZone"] = new hostedzone.HostedZone {
+    Name = "jamesward.me"
+  }
+
+  ["RecordSetA"] = new recordset.RecordSet {
+    HostedZoneId = cfn.Ref("HostedZone")
     Name = domainname
     TypeProperty = "A"
     AliasTarget {
-      // The  following HosteZoneId is always used for alias records pointing to CF.
+      // The following HosteZoneId is always used for alias records pointing to CF.
+      HostedZoneId = "Z2FDTNDATAQYW2"
+      //HostedZoneId = cfn.GetAtt("Distribution", "HostedZoneId")
+      DNSName = cfn.GetAtt("Distribution", "DomainName")
+      EvaluateTargetHealth = false
+    }
+  }
+
+  ["RecordSetAAAA"] = new recordset.RecordSet {
+    HostedZoneId = cfn.Ref("HostedZone")
+    Name = domainname
+    TypeProperty = "AAAA"
+    AliasTarget {
+      // The following HosteZoneId is always used for alias records pointing to CF.
       HostedZoneId = "Z2FDTNDATAQYW2"
       //HostedZoneId = cfn.GetAtt("Distribution", "HostedZoneId")
       DNSName = cfn.GetAtt("Distribution", "DomainName")
@@ -70,18 +82,18 @@ Resources {
     DomainValidationOptions {
       new {
         DomainName = domainname
-        HostedZoneId = cfn.Ref("HostedZoneId")
+        HostedZoneId = cfn.Ref("HostedZone")
       }
     }
   }
 
-  ["Bucket"] = new bucket.Bucket {
+  ["WebsiteBucket"] = new bucket.Bucket {
     BucketName = domainname
     AccessControl = "Private"
   }
 
   ["BucketPolicy"] = new bucketpolicy.BucketPolicy {
-    Bucket = cfn.Ref("Bucket")
+    Bucket = cfn.Ref("WebsiteBucket")
     PolicyDocument {
       Version = "2012-10-17"
       Statement {
@@ -90,7 +102,7 @@ Resources {
           Principal {
             Service = "cloudfront.amazonaws.com"
           }
-          Resource = cfn.Sub("arn:aws:s3:::${Bucket}/*")
+          Resource = cfn.Sub("arn:aws:s3:::${WebsiteBucket}/*")
           Effect = "Allow"
           Condition {
             StringEquals {
@@ -111,9 +123,33 @@ Resources {
     }
   }
 
+  // From: https://stackoverflow.com/a/75816672/77409
+  ["DistributionFunction"] = new cloudfrontFunction.Function {
+    Name = "RedirectDefaultIndexRequest"
+    AutoPublish = true
+    FunctionCode = """
+      function handler(event) {
+        var request = event.request;
+        var uri = request.uri;
+
+        // Check whether the URI is missing a file name.
+        if (uri.endsWith('/')) {
+          request.uri += 'index.html';
+        }
+
+        return request;
+      }
+      """
+    FunctionConfig {
+      Comment = "Redirect-Default-Index-Request"
+      Runtime = "cloudfront-js-1.0"
+    }
+  }
+
   ["Distribution"] = new distribution.Distribution {
     DistributionConfig {
       Enabled = true
+      DefaultRootObject = "index.html"
       DefaultCacheBehavior {
         AllowedMethods {
           "GET"
@@ -127,6 +163,12 @@ Resources {
         MaxTTL = 31536000
         ViewerProtocolPolicy = "redirect-to-https"
         TargetOriginId = "WebOrigin"
+        FunctionAssociations {
+          new {
+            EventType = "viewer-request"
+            FunctionARN = cfn.GetAtt("DistributionFunction.FunctionMetadata", "FunctionARN")
+          }
+        }
       }
       HttpVersion = "http2"
       Aliases {
@@ -139,10 +181,254 @@ Resources {
       Origins {
         new {
           Id = "WebOrigin"
-          DomainName = cfn.GetAtt("Bucket", "RegionalDomainName")
+          DomainName = cfn.GetAtt("WebsiteBucket", "RegionalDomainName")
           // it seems this must be specified but empty?
           S3OriginConfig { }
           OriginAccessControlId = cfn.GetAtt("OriginAccessControl", "Id")
+        }
+      }
+    }
+  }
+
+  // todo: maybe for static sites we don't need the intermediate bucket?
+  ["CodePipelineBucket"] = new bucket.Bucket {
+
+  }
+
+  ["CodePipelineRole"] = new role.Role {
+    AssumeRolePolicyDocument {
+      Version = "2012-10-17"
+      Statement {
+        Effect = "Allow"
+        Principal {
+          Service = "codepipeline.amazonaws.com"
+        }
+        Action = "sts:AssumeRole"
+      }
+    }
+    Policies {
+      new {
+        PolicyName = "CodePipelinePolicy"
+        PolicyDocument {
+          Version = "2012-10-17"
+          Statement = new Listing {
+            new {
+              Effect = "Allow"
+              Action = new Listing {
+                "s3:GetObject"
+                "s3:GetObjectVersion"
+                "s3:GetBucketVersioning"
+                "s3:PutObject"
+              }
+              Resource = new Listing {
+                cfn.GetAtt("CodePipelineBucket", "Arn")
+                cfn.Sub("${CodePipelineBucket.Arn}/*")
+              }
+            }
+            new {
+              Effect = "Allow"
+              Action = new Listing {
+                "s3:PutObject"
+              }
+              Resource = new Listing {
+                cfn.GetAtt("WebsiteBucket", "Arn")
+                cfn.Sub("${WebsiteBucket.Arn}/*")
+              }
+            }
+            new {
+              Effect = "Allow"
+              Action = new Listing {
+                "codebuild:BatchGetBuilds"
+                "codebuild:StartBuild"
+              }
+              Resource = new Listing {
+                "*" // todo: more restricted?
+              }
+            }
+            new {
+              Effect = "Allow"
+              Action = new Listing {
+                "codestar-connections:UseConnection"
+              }
+              Resource = new Listing {
+                cfn.Ref("GitHubConnection")
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  ["GitHubConnection"] = new codestarconnectionsConnection.Connection {
+    ConnectionName = cfn.Ref("AWS::StackName")
+    ProviderType = "GitHub"
+  }
+
+  ["CodeBuildRole"] = new role.Role {
+    AssumeRolePolicyDocument {
+      Version = "2012-10-17"
+      Statement {
+        Effect = "Allow"
+        Principal {
+          Service = "codebuild.amazonaws.com"
+        }
+        Action = "sts:AssumeRole"
+      }
+    }
+    ManagedPolicyArns {
+      "arn:aws:iam::aws:policy/AWSCodeBuildAdminAccess"
+    }
+    Policies {
+      new {
+        PolicyName = "CodeBuildLogsAndArtifacts"
+        PolicyDocument {
+          Version = "2012-10-17"
+          Statement = new Listing {
+            new {
+              Effect = "Allow"
+              Action = new Listing {
+                "logs:CreateLogGroup"
+                "logs:CreateLogStream"
+                "logs:PutLogEvents"
+              }
+              Resource = new Listing {
+                cfn.Sub("arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/*") // todo: can we reference the specific log-stream without a circular reference?
+              }
+            }
+            new {
+              Effect = "Allow"
+              Action = new Listing {
+                "s3:GetObject"
+                "s3:PutObject"
+              }
+              Resource = new Listing {
+                cfn.Sub("${CodePipelineBucket.Arn}/*")
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  ["CodeBuildProject"] = new codebuildProject.Project {
+    Artifacts {
+      Type = "CODEPIPELINE" // to enum?
+    }
+    Environment {
+      ComputeType = "BUILD_GENERAL1_SMALL"
+      Image = "aws/codebuild/standard:5.0"
+      Type = "LINUX_CONTAINER"
+    }
+    ServiceRole = cfn.GetAtt("CodeBuildRole", "Arn")
+    Source {
+      Type = "CODEPIPELINE"
+      BuildSpec = """
+        version: 0.2
+        env:
+            git-credential-helper: yes
+        phases:
+            pre_build:
+                commands:
+                    - ls -alt
+            build:
+                commands:
+                    - git submodule update --init --recursive
+        artifacts:
+            files:
+                - '**/*'
+            exclude-paths:
+                - '**/.git'
+                - '**/.gitignore'
+                - '**/.gitmodules'
+        """
+    }
+  }
+
+  ["CodePipeline"] = new codepipelinePipeline.Pipeline {
+    RoleArn = cfn.GetAtt("CodePipelineRole", "Arn")
+    ArtifactStore = new {
+      Type = "S3"
+      Location = cfn.Ref("CodePipelineBucket")
+    }
+    Stages {
+      new {
+        Name = "Source"
+        Actions {
+          new {
+            Name = "SourceAction"
+            ActionTypeId {
+              Category = "Source"
+              Owner = "AWS"
+              Version = "1"
+              Provider = "CodeStarSourceConnection"
+            }
+            OutputArtifacts {
+              new {
+                Name = "CloneOutput"
+              }
+            }
+            Configuration {
+              ConnectionArn = cfn.Ref("GitHubConnection")
+              FullRepositoryId = "jamesward/presos.jamesward.com"
+              BranchName = "main"
+              OutputArtifactFormat = "CODEBUILD_CLONE_REF"
+            }
+          }
+        }
+      }
+
+      new {
+        Name = "Build"
+        Actions {
+          new {
+            Name = "CloneGitSubmodules"
+            ActionTypeId {
+              Category = "Build"
+              Owner = "AWS"
+              Version = "1"
+              Provider = "CodeBuild"
+            }
+            Configuration {
+              ProjectName = cfn.Ref("CodeBuildProject")
+            }
+            InputArtifacts {
+              new {
+                Name = "CloneOutput"
+              }
+            }
+            OutputArtifacts {
+              new {
+                Name = "SourceOutput"
+              }
+            }
+          }
+        }
+      }
+
+      // todo: this should overwrite the bucket contents so any deleted files, go away
+      new {
+        Name = "Deploy"
+        Actions {
+          new {
+            Name = "DeployAction"
+            ActionTypeId {
+              Category = "Deploy"
+              Owner = "AWS"
+              Version = "1"
+              Provider = "S3"
+            }
+            InputArtifacts {
+              new {
+                Name = "SourceOutput"
+              }
+            }
+            Configuration {
+              BucketName = cfn.Ref("WebsiteBucket")
+              Extract = true
+            }
+          }
         }
       }
     }
